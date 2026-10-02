@@ -17,6 +17,17 @@ export class Game {
   private enemies!: Enemy[];
   private particles!: Particle[];
   private gameOver = false;
+  private started = false;
+  /** Fired once when the player quits a live run (Q key or Quit button). */
+  onQuit: (() => void) | null = null;
+
+  get score(): number {
+    return this.player.score;
+  }
+
+  get isGameOver(): boolean {
+    return this.gameOver;
+  }
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext("2d");
@@ -36,7 +47,32 @@ export class Game {
     this.gameOver = false;
   }
 
+  /** Enter (or re-enter) a run. Idempotent — safe to call on clicks. */
+  start(): void {
+    if (this.started) return;
+    this.reset();
+    this.started = true;
+  }
+
+  /** Quit the current run back to the title screen. */
+  quitToTitle(): void {
+    const wasPlaying = this.started;
+    this.reset();
+    this.started = false;
+    if (wasPlaying) this.onQuit?.();
+  }
+
   update(): void {
+    // Q quits the current run from anywhere (playing or game over).
+    if (wasPressed("q")) {
+      this.quitToTitle();
+      return;
+    }
+    if (!this.started) {
+      this.stars.update();
+      if (wasPressed("enter")) this.start();
+      return;
+    }
     if (this.gameOver) {
       if (wasPressed("r")) this.reset();
       return;
@@ -143,8 +179,38 @@ export class Game {
     ctx.fillText(`SCORE: ${this.player.score}`, 10, 25);
     ctx.fillStyle = "#ff3c3c";
     ctx.fillText(`HP: ${"♥".repeat(Math.max(0, this.player.hp))}`, 10, 47);
+    ctx.fillStyle = "#9a9ac0";
+    ctx.font = "14px monospace";
+    ctx.textAlign = "right";
+    ctx.fillText("Q: quit", CONFIG.width - 10, 25);
+    ctx.textAlign = "left";
 
-    if (this.gameOver) this.drawGameOver();
+    if (!this.started) this.drawTitle();
+    else if (this.gameOver) this.drawGameOver();
+  }
+
+  private drawTitle(): void {
+    const { ctx } = this;
+    const cx = CONFIG.width / 2;
+    const cy = CONFIG.height / 2;
+
+    ctx.fillStyle = "rgba(0,0,0,0.72)";
+    ctx.fillRect(0, 0, CONFIG.width, CONFIG.height);
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#00dcff";
+    ctx.font = "bold 56px monospace";
+    ctx.fillText("SPACE SHOOTER", cx, cy - 60);
+
+    ctx.fillStyle = "#fff";
+    ctx.font = "18px monospace";
+    ctx.fillText("Click or press ENTER to launch", cx, cy - 10);
+
+    ctx.fillStyle = "#9a9ac0";
+    ctx.font = "15px monospace";
+    ctx.fillText("Arrows / WASD — move · Space — shoot", cx, cy + 25);
+    ctx.fillText("R — restart · Q — quit", cx, cy + 50);
+    ctx.textAlign = "left";
   }
 
   private drawGameOver(): void {

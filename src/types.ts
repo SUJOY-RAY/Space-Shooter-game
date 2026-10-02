@@ -36,7 +36,7 @@ export const CONFIG: GameConfig = {
     playerSpeed: 6,
     playerFireRate: 10,
     playerMaxHp: 5,
-    invulnFrame: 60,
+    invulnFrames: 60,
 }
 
 export const rand = (a: number, b: number): number => 
