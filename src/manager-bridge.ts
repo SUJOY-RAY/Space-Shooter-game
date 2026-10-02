@@ -46,20 +46,6 @@ function postToHub(message: Record<string, unknown>): void {
 /** Show who is playing when launched from the hub + stream score events. */
 export function attachManagerBridge(game: BridgeGame): BridgeInfo {
   const info = readBridgeInfo();
-
-  const banner = document.getElementById("manager-banner");
-  if (banner) {
-    if (info.accountName) {
-      banner.textContent = `🕹️ Managed session — ${info.accountName} · progress auto-saves to the hub (IndexedDB)`;
-      banner.style.display = "block";
-    } else if (info.embedded) {
-      banner.textContent = "🕹️ Embedded by Game Manager — select an account in the hub to save progress";
-      banner.style.display = "block";
-    } else {
-      banner.style.display = "none";
-    }
-  }
-
   postToHub({
     type: "GAME_READY",
     gameId: info.gameId,

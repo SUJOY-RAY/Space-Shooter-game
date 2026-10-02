@@ -21,6 +21,7 @@ export class Game {
   /** Fired once when the player quits a live run (Q key or Quit button). */
   onQuit: (() => void) | null = null;
 
+
   get score(): number {
     return this.player.score;
   }
@@ -182,7 +183,6 @@ export class Game {
     ctx.fillStyle = "#9a9ac0";
     ctx.font = "14px monospace";
     ctx.textAlign = "right";
-    ctx.fillText("Q: quit", CONFIG.width - 10, 25);
     ctx.textAlign = "left";
 
     if (!this.started) this.drawTitle();

@@ -5,8 +5,9 @@ import { attachManagerBridge } from "./manager-bridge.js";
 
 initInput();
 
-const canvas = document.getElementById("game") as HTMLCanvasElement | null;
-if (!canvas) throw new Error("Canvas #game not found");
+const canvasEl = document.getElementById("game") as HTMLCanvasElement | null;
+if (!canvasEl) throw new Error("Canvas #game not found");
+const canvas: HTMLCanvasElement = canvasEl;
 
 const game = new Game(canvas);
 
@@ -20,12 +21,6 @@ canvas.addEventListener("pointerdown", () => {
 if (new URLSearchParams(window.location.search).get("embed") === "1") {
     canvas.focus();
 }
-
-// On-screen Quit button (Q) — quits the run back to the title screen.
-document.getElementById("quit-btn")?.addEventListener("click", () => {
-    game.quitToTitle();
-    canvas.focus();
-});
 
 // Report progress to the Manager hub when embedded (no-op standalone).
 attachManagerBridge(game);

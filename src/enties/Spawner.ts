@@ -14,7 +14,7 @@ export class Spawner {
     private difficulty = 0;
     private interval = 60;
 
-    constructor(private readonly w: number) { }
+    constructor(public width: number) { }
 
     update(enemies: Enemy[]): void {
         this.difficulty++;
@@ -27,7 +27,7 @@ export class Spawner {
         if (this.timer < this.interval) return;
         this.timer = 0;
 
-        const x = rand(60, this.w - 60);
+        const x = rand(60, Math.max(61, this.width - 60));
         const y = rand(-80, -30);
 
         let roll = Math.random();

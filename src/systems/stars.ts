@@ -11,8 +11,8 @@ export class StarField implements Drawable {
     private readonly stars: Star[];
 
     constructor(
-        private readonly w: number,
-        private readonly h: number, 
+        private w: number,
+        private h: number,
         count = 120
     ) {
         this.stars = Array.from({ length: count }, () => ({
@@ -21,6 +21,16 @@ export class StarField implements Drawable {
             s: rand(0.3, 1.5),
             r: Math.floor(rand(1, 3)),
         }));
+    }
+
+    /** Adapt to a new arena size, keeping existing stars in range. */
+    resize(w: number, h: number): void {
+        this.w = w;
+        this.h = h;
+        for (const st of this.stars) {
+            if (st.x > w) st.x = rand(0, w);
+            if (st.y > h) st.y = rand(0, h);
+        }
     }
 
     update(): void {

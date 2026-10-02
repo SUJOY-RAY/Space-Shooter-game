@@ -10,23 +10,44 @@ export class Player implements Drawable, Collidable {
     public invuln = 0;
     public score = 0;
 
+    private bw: number;
+    private bh: number;
+
     constructor(
         public hp: number,
         public readonly cfg: GameConfig,
         private readonly bullets: Bullet[]
     ) {
-        this.x = cfg.width / 2;
-        this.y = cfg.height - 70;
+        this.bw = cfg.width;
+        this.bh = cfg.height;
+        this.x = this.bw / 2;
+        this.y = this.bh - 70;
+        this.clampToBounds();
     }
-    
+
+    /** Single choke point: the ship can never leave the playable bounds. */
+    private clampToBounds(): void {
+        // Generous bottom clearance: hull + engine flame + a visible gap,
+        // so the ship clearly rests *inside* the bottom edge, never on it.
+        const bottomClearance = this.r + 24;
+        this.x = Math.max(this.r, Math.min(this.bw - this.r, this.x));
+        this.y = Math.max(this.r, Math.min(this.bh - bottomClearance, this.y));
+    }
+
+    /** Track the live arena size (called on resize, never resets progress). */
+    setBounds(w: number, h: number): void {
+        this.bw = Math.max(this.r * 2 + 1, w);
+        this.bh = Math.max(this.r * 2 + 1, h);
+        this.clampToBounds();
+    }
+
     update(): void {
         if(isDown("arrowleft", "a")) this.x -= this.cfg.playerSpeed;
         if(isDown("arrowright", "d")) this.x += this.cfg.playerSpeed;
         if(isDown("arrowup", "w")) this.y -= this.cfg.playerSpeed;
         if(isDown("arrowdown", "s")) this.y += this.cfg.playerSpeed;
 
-        this.x = Math.max(this.r, Math.min(this.cfg.width - this.r, this.x));
-        this.y = Math.max(this.r, Math.min(this.cfg.height - this.r, this.y));
+        this.clampToBounds();
 
         if (this.cooldown > 0) this.cooldown--;
         if (this.invuln > 0) this.invuln--;
