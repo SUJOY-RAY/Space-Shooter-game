@@ -9,6 +9,9 @@ export class Player implements Drawable, Collidable {
     public cooldown = 0;
     public invuln = 0;
     public score = 0;
+    /** Per-frame velocity (px/frame) — read by enemy lead-prediction AI. */
+    public vx = 0;
+    public vy = 0;
 
     private bw: number;
     private bh: number;
@@ -42,12 +45,16 @@ export class Player implements Drawable, Collidable {
     }
 
     update(): void {
+        const px = this.x;
+        const py = this.y;
         if(isDown("arrowleft", "a")) this.x -= this.cfg.playerSpeed;
         if(isDown("arrowright", "d")) this.x += this.cfg.playerSpeed;
         if(isDown("arrowup", "w")) this.y -= this.cfg.playerSpeed;
         if(isDown("arrowdown", "s")) this.y += this.cfg.playerSpeed;
 
         this.clampToBounds();
+        this.vx = this.x - px;
+        this.vy = this.y - py;
 
         if (this.cooldown > 0) this.cooldown--;
         if (this.invuln > 0) this.invuln--;

@@ -1,4 +1,5 @@
 import { CONFIG, dist, type Collidable } from "./types";
+import { DIFFICULTIES, TUNING, difficultyLabel, parseDifficulty, type Difficulty } from "./difficulty";
 import { wasPressed } from "./input";
 import { StarField } from "./systems/stars";
 import { Spawner } from "./enties/Spawner";
@@ -6,6 +7,14 @@ import { Player } from "./enties/player";
 import { Bullet } from "./enties/bullet";
 import { Enemy } from "./enties/enemies";
 import { Particle } from "./enties/particle";
+
+function readDifficultyFromUrl(): Difficulty {
+  try {
+    return parseDifficulty(new URLSearchParams(window.location.search).get("difficulty"));
+  } catch {
+    return "normal";
+  }
+}
 
 export class Game {
   private readonly ctx: CanvasRenderingContext2D;
@@ -18,8 +27,11 @@ export class Game {
   private particles!: Particle[];
   private gameOver = false;
   private started = false;
+  private difficulty: Difficulty;
   /** Fired once when the player quits a live run (Q key or Quit button). */
   onQuit: (() => void) | null = null;
+  /** Fired when the title-screen difficulty changes (hub can mirror it). */
+  onDifficultyChange: ((d: Difficulty) => void) | null = null;
 
 
   get score(): number {
@@ -30,13 +42,33 @@ export class Game {
     return this.gameOver;
   }
 
+  get currentDifficulty(): Difficulty {
+    return this.difficulty;
+  }
+
   constructor(private readonly canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("2D context unavailable");
     this.ctx = ctx;
+    this.difficulty = readDifficultyFromUrl();
     this.stars = new StarField(CONFIG.width, CONFIG.height);
-    this.spawner = new Spawner(CONFIG.width);
+    this.spawner = new Spawner(CONFIG.width, this.difficulty);
     this.reset();
+  }
+
+  /** Switch difficulty. On the title screen it applies immediately; mid-run it takes effect on reset. */
+  setDifficulty(d: Difficulty): void {
+    if (this.difficulty === d) return;
+    this.difficulty = d;
+    this.spawner.setDifficulty(d);
+    if (!this.started) this.reset();
+    this.onDifficultyChange?.(d);
+  }
+
+  cycleDifficulty(dir: 1 | -1 = 1): void {
+    const i = DIFFICULTIES.indexOf(this.difficulty);
+    const next = DIFFICULTIES[(i + dir + DIFFICULTIES.length) % DIFFICULTIES.length]!;
+    this.setDifficulty(next);
   }
 
   reset(): void {
@@ -45,6 +77,7 @@ export class Game {
     this.enemies = [];
     this.particles = [];
     this.player = new Player(CONFIG.playerMaxHp, CONFIG, this.bullets);
+    this.spawner.reset();
     this.gameOver = false;
   }
 
@@ -71,6 +104,10 @@ export class Game {
     }
     if (!this.started) {
       this.stars.update();
+      // Title-screen difficulty select: 1/2/3 jump, arrows cycle.
+      if (wasPressed("1")) this.setDifficulty("easy");
+      else if (wasPressed("2")) this.setDifficulty("normal");
+      else if (wasPressed("3")) this.setDifficulty("hard");
       if (wasPressed("enter")) this.start();
       return;
     }
@@ -107,7 +144,12 @@ export class Game {
     // Enemies
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const e = this.enemies[i]!;
-      e.update({ player: this.player, enemyBullets: this.enemyBullets });
+      e.update({
+        player: this.player,
+        enemyBullets: this.enemyBullets,
+        playerBullets: this.bullets,
+        difficulty: this.difficulty,
+      });
 
       if (e.y > CONFIG.height + 100 || e.y < -300) {
         this.enemies.splice(i, 1);
@@ -126,7 +168,7 @@ export class Game {
           this.bullets.splice(j, 1);
           if (e.takeDamage(1)) {
             this.enemies.splice(i, 1);
-            this.player.score += e.score;
+            this.player.score += Math.round(e.score * TUNING[this.difficulty].scoreMult);
             this.boom(e.x, e.y, e.color, 15);
           }
           break;
@@ -182,7 +224,7 @@ export class Game {
     ctx.fillText(`HP: ${"♥".repeat(Math.max(0, this.player.hp))}`, 10, 47);
     ctx.fillStyle = "#9a9ac0";
     ctx.font = "14px monospace";
-    ctx.textAlign = "right";
+    ctx.fillText(`${difficultyLabel(this.difficulty).toUpperCase()}`, 10, 67);
     ctx.textAlign = "left";
 
     if (!this.started) this.drawTitle();
@@ -200,16 +242,26 @@ export class Game {
     ctx.textAlign = "center";
     ctx.fillStyle = "#00dcff";
     ctx.font = "bold 56px monospace";
-    ctx.fillText("SPACE SHOOTER", cx, cy - 60);
+    ctx.fillText("SPACE SHOOTER", cx, cy - 90);
 
     ctx.fillStyle = "#fff";
     ctx.font = "18px monospace";
-    ctx.fillText("Click or press ENTER to launch", cx, cy - 10);
+    ctx.fillText("Click or press ENTER to launch", cx, cy - 40);
+
+    // Difficulty select: selected tier is highlighted.
+    ctx.font = "16px monospace";
+    const labels = DIFFICULTIES.map((d, i) => {
+      const marker = d === this.difficulty ? "▶" : " ";
+      return `${marker} ${i + 1}:${difficultyLabel(d)}`;
+    }).join("   ");
+    ctx.fillStyle = "#ffee00";
+    ctx.fillText(labels, cx, cy - 8);
 
     ctx.fillStyle = "#9a9ac0";
-    ctx.font = "15px monospace";
-    ctx.fillText("Arrows / WASD — move · Space — shoot", cx, cy + 25);
-    ctx.fillText("R — restart · Q — quit", cx, cy + 50);
+    ctx.font = "14px monospace";
+    ctx.fillText("Press 1 / 2 / 3 to pick difficulty", cx, cy + 18);
+    ctx.fillText("Arrows / WASD — move · Space — shoot", cx, cy + 42);
+    ctx.fillText("R — restart · Q — quit", cx, cy + 64);
     ctx.textAlign = "left";
   }
 
@@ -228,7 +280,7 @@ export class Game {
 
     ctx.fillStyle = "#fff";
     ctx.font = "18px monospace";
-    ctx.fillText(`Final Score: ${this.player.score}`, cx, cy + 10);
+    ctx.fillText(`Final Score: ${this.player.score}  [${difficultyLabel(this.difficulty)}]`, cx, cy + 10);
 
     ctx.fillStyle = "#ffee00";
     ctx.fillText("Press R to restart", cx, cy + 40);

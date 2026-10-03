@@ -1,4 +1,5 @@
 import { rand } from "../types";
+import { TUNING, type Difficulty } from "../difficulty";
 import { Chaser, Enemy, Shooter, Zigzag } from "./enemies";
 
 type EnemyFactory = (x: number, y: number) => Enemy
@@ -11,16 +12,30 @@ const FACTORIES: ReadonlyArray<readonly [number, EnemyFactory]> = [
 
 export class Spawner {
     private timer = 0;
-    private difficulty = 0;
-    private interval = 60;
+    private ramp = 0;
+    private interval: number;
 
-    constructor(public width: number) { }
+    constructor(public width: number, private gameDifficulty: Difficulty = "normal") {
+        this.interval = TUNING[this.gameDifficulty].spawnInterval;
+    }
+
+    setDifficulty(d: Difficulty): void {
+        this.gameDifficulty = d;
+        this.reset();
+    }
+
+    reset(): void {
+        this.timer = 0;
+        this.ramp = 0;
+        this.interval = TUNING[this.gameDifficulty].spawnInterval;
+    }
 
     update(enemies: Enemy[]): void {
-        this.difficulty++;
-        if (this.difficulty > 600 && this.interval > 20) {
-            this.difficulty = 0;
-            this.interval -= 5;
+        const tuning = TUNING[this.gameDifficulty];
+        this.ramp++;
+        if (this.ramp > 600 && this.interval > tuning.minInterval) {
+            this.ramp = 0;
+            this.interval = Math.max(tuning.minInterval, this.interval - tuning.spawnStep);
         }
 
         this.timer++;
@@ -33,7 +48,9 @@ export class Spawner {
         let roll = Math.random();
         for (const [chance, factory] of FACTORIES) {
             if (roll < chance) {
-                enemies.push(factory(x, y));
+                const e = factory(x, y);
+                e.applyDifficultyHp(TUNING[this.gameDifficulty].hpBonus);
+                enemies.push(e);
                 return;
             }
             roll -= chance;
