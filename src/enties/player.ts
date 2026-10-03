@@ -7,6 +7,8 @@ export class Player implements Drawable, Collidable {
     public y: number;
     public readonly r = 16;
     public cooldown = 0;
+    /** Own cooldown so up-fire and side-fire don't starve each other. */
+    public sideCooldown = 0;
     public invuln = 0;
     public score = 0;
     /** Per-frame velocity (px/frame) — read by enemy lead-prediction AI. */
@@ -57,6 +59,7 @@ export class Player implements Drawable, Collidable {
         this.vy = this.y - py;
 
         if (this.cooldown > 0) this.cooldown--;
+        if (this.sideCooldown > 0) this.sideCooldown--;
         if (this.invuln > 0) this.invuln--;
 
         if (isDown(" ") && this.cooldown === 0) {
@@ -64,6 +67,23 @@ export class Player implements Drawable, Collidable {
                 new Bullet(this.x, this.y - this.r, 0, -10, "#ffee00")
             );
             this.cooldown = this.cfg.playerFireRate;
+        }
+
+        // Horizontal fire: Z shoots left, X shoots right (wing guns).
+        if (this.sideCooldown === 0) {
+            const left = isDown("z");
+            const right = isDown("x");
+            if (left) {
+                this.bullets.push(
+                    new Bullet(this.x - this.r, this.y + 2, -10, 0, "#ffee00")
+                );
+            }
+            if (right) {
+                this.bullets.push(
+                    new Bullet(this.x + this.r, this.y + 2, 10, 0, "#ffee00")
+                );
+            }
+            if (left || right) this.sideCooldown = this.cfg.playerFireRate;
         }
     }
 
@@ -92,6 +112,11 @@ export class Player implements Drawable, Collidable {
         ctx.strokeStyle = "#fff";
         ctx.lineWidth = 2;
         ctx.stroke();
+
+        // Wing gun barrels (telegraph Z/X side fire).
+        ctx.fillStyle = "#ffee00";
+        ctx.fillRect(this.x - this.r - 3, this.y - 1, 4, 4);
+        ctx.fillRect(this.x + this.r - 1, this.y - 1, 4, 4);
 
         const flame = 4 + Math.random() * 6;
         ctx.fillStyle = "#ff8c00";
