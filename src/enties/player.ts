@@ -69,21 +69,51 @@ export class Player implements Drawable, Collidable {
             this.cooldown = this.cfg.playerFireRate;
         }
 
-        // Horizontal fire: Z shoots left, X shoots right (wing guns).
+        // X alone fires straight up (Space always does too).
+        const left = isDown("z");
+        const upKey = isDown("x");
+        const right = isDown("c");
+        if (upKey && !left && !right && this.cooldown === 0) {
+            this.bullets.push(
+                new Bullet(this.x, this.y - this.r, 0, -10, "#ffee00")
+            );
+            this.cooldown = this.cfg.playerFireRate;
+        }
+
+        // Horizontal + diagonal fire (wing guns): Z left, C right,
+        // Z+X up-left diagonal, X+C up-right diagonal.
         if (this.sideCooldown === 0) {
-            const left = isDown("z");
-            const right = isDown("x");
-            if (left) {
+            const dv = 10 / Math.SQRT2;
+            if (left && upKey && right) {
+                // Triple chord: both diagonals at once.
                 this.bullets.push(
-                    new Bullet(this.x - this.r, this.y + 2, -10, 0, "#ffee00")
+                    new Bullet(this.x - this.r, this.y - this.r, -dv, -dv, "#ffee00"),
+                    new Bullet(this.x + this.r, this.y - this.r, dv, -dv, "#ffee00")
                 );
-            }
-            if (right) {
+                this.sideCooldown = this.cfg.playerFireRate;
+            } else if (left && upKey) {
                 this.bullets.push(
-                    new Bullet(this.x + this.r, this.y + 2, 10, 0, "#ffee00")
+                    new Bullet(this.x - this.r, this.y - this.r, -dv, -dv, "#ffee00")
                 );
+                this.sideCooldown = this.cfg.playerFireRate;
+            } else if (right && upKey) {
+                this.bullets.push(
+                    new Bullet(this.x + this.r, this.y - this.r, dv, -dv, "#ffee00")
+                );
+                this.sideCooldown = this.cfg.playerFireRate;
+            } else {
+                if (left) {
+                    this.bullets.push(
+                        new Bullet(this.x - this.r, this.y + 2, -10, 0, "#ffee00")
+                    );
+                }
+                if (right) {
+                    this.bullets.push(
+                        new Bullet(this.x + this.r, this.y + 2, 10, 0, "#ffee00")
+                    );
+                }
+                if (left || right) this.sideCooldown = this.cfg.playerFireRate;
             }
-            if (left || right) this.sideCooldown = this.cfg.playerFireRate;
         }
     }
 

@@ -260,8 +260,8 @@ export class Game {
     ctx.fillStyle = "#9a9ac0";
     ctx.font = "14px monospace";
     ctx.fillText("Press 1 / 2 / 3 to pick difficulty", cx, cy + 18);
-    ctx.fillText("Arrows / WASD — move · Space — fire up · Z/X — fire left/right", cx, cy + 42);
-    ctx.fillText("R — restart · Q — quit", cx, cy + 64);
+    ctx.fillText("Arrows / WASD — move · X/Space — fire up · Z/C — fire sides", cx, cy + 42);
+    ctx.fillText("Z+X — up-left · X+C — up-right · R — restart · Q — quit", cx, cy + 64);
     ctx.textAlign = "left";
   }
 
