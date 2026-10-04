@@ -123,45 +123,126 @@
             text-align: center;
         }
         .pad-sysrow { display: flex; gap: 10px; }
-        .pill {
-            border: 2px solid #111;
-            background: #3a3a44;
+        /* System keyboard: the old START/RST pills live here as real
+           keyboard keys (Enter = start, R = restart). */
+        .sys-label {
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: #6a6a78;
+            text-align: center;
+        }
+        .syskeys { display: flex; gap: 6px; }
+        button.key {
+            border: 1px solid #111;
+            border-bottom-width: 3px;
+            background: linear-gradient(180deg, #4a4a55, #2c2c34);
             color: #e8e8ee;
-            border-radius: 999px;
+            border-radius: 6px;
             font-family: inherit;
             font-size: 10px;
             font-weight: bold;
-            letter-spacing: 1px;
-            padding: 8px 14px;
+            letter-spacing: 0.5px;
+            padding: 6px 10px;
             cursor: pointer;
             touch-action: none;
-            min-width: 44px;
-            min-height: 44px;
+            min-width: 40px;
+            min-height: 36px;
         }
-        .pill.active { background: #9a9ac0; color: #101014; }
-        /* A/B cannons. */
-        .abtns {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            flex: none;
-        }
-        .abtns button {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            border: 3px solid #111;
-            box-shadow: 0 4px 0 #000;
+        button.key kbd {
             font-family: inherit;
-            font-size: 22px;
+            font-size: 10px;
             font-weight: bold;
-            cursor: pointer;
-            touch-action: none;
-            color: #1a0505;
         }
-        #btn-b { background: radial-gradient(circle at 35% 30%, #ffe36e, #e0a800); align-self: flex-end; }
-        #btn-a { background: radial-gradient(circle at 35% 30%, #ff7b7b, #c81e1e); align-self: flex-start; color: #fff; }
-        .abtns button.active { transform: translateY(3px); box-shadow: 0 1px 0 #000; filter: brightness(1.25); }
+        button.key.active {
+            background: #9a9ac0; color: #101014;
+            border-bottom-width: 1px;
+            transform: translateY(2px);
+        }
+        /* Enter looks like a small one-line text box (still a button —
+           tap it to start). */
+        button.key-textbox {
+            flex: 1 1 auto;
+            background: rgba(255, 255, 255, 0.92);
+            color: #6d6d70;
+            text-align: left;
+            font-weight: normal;
+            font-size: 9px;
+            padding: 4px 8px;
+            min-width: 0;
+            min-height: 28px;
+            border: 1px solid #111;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+        button.key-textbox.active {
+            background: #ffffff; color: #111111;
+            transform: none;
+            border-bottom-width: 1px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+        }
+        /* Fire joystick: ball-top stick over a dark dished base. Grab it,
+           drag toward a direction to fire that way, release to spring back
+           and stop. Diagonals land properly — the shot follows the stick. */
+        #fire-ring {
+            position: relative;
+            width: 148px; height: 148px;
+            flex: none;
+            border-radius: 50%;
+            border: 2px solid #0c0c0f;
+            box-shadow: 0 4px 0 #000,
+                inset 0 2px 6px rgba(255, 255, 255, 0.08),
+                inset 0 -8px 14px rgba(0, 0, 0, 0.65);
+            background:
+                conic-gradient(from 0deg,
+                    transparent 0deg 44deg, rgba(0, 0, 0, 0.55) 44deg 46deg,
+                    transparent 46deg 134deg, rgba(0, 0, 0, 0.55) 134deg 136deg,
+                    transparent 136deg 224deg, rgba(0, 0, 0, 0.55) 224deg 226deg,
+                    transparent 226deg 314deg, rgba(0, 0, 0, 0.55) 314deg 316deg,
+                    transparent 316deg 360deg),
+                radial-gradient(circle at 50% 42%, #3a3a42 0%, #26262c 55%, #17171b 100%);
+            touch-action: none;
+            cursor: grab;
+            outline: none;
+            --tick-r: -60px;
+            --jx: 0px;
+            --jy: 0px;
+            --aim: 0deg;
+            --mag: 0px;
+        }
+        #fire-ring.active { filter: brightness(1.15); cursor: grabbing; }
+        #fire-ring .tick {
+            position: absolute; left: 50%; top: 50%;
+            width: 18px; height: 18px; margin: -9px 0 0 -9px;
+            display: grid; place-items: center;
+            font-size: 13px; color: #c9c9d2;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+            pointer-events: none;
+            transform: rotate(var(--a)) translateY(var(--tick-r)) rotate(calc(-1 * var(--a)));
+        }
+        /* Stick stem: stretches from the dish center toward the ball. */
+        #fire-ring .joy-stem {
+            position: absolute; left: 50%; top: 50%;
+            width: var(--mag); height: 16px; margin-top: -8px;
+            transform-origin: left center;
+            transform: rotate(var(--aim));
+            background: linear-gradient(180deg, #3c3c44, #141418);
+            border-radius: 8px;
+            pointer-events: none;
+        }
+        /* Ball top: light gray sphere, shadow falls opposite the drag. */
+        #fire-ring .joy-stick {
+            position: absolute; left: 50%; top: 50%;
+            width: 56px; height: 56px; margin: -28px 0 0 -28px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 34% 28%,
+                #fafafc 0%, #d9d9e0 30%, #a9a9b4 62%, #6e6e78 100%);
+            border: 2px solid #0c0c0f;
+            box-shadow: calc(var(--jx) * -0.25) calc(var(--jy) * -0.25 + 5px) 12px rgba(0, 0, 0, 0.55),
+                inset -3px -5px 8px rgba(0, 0, 0, 0.25);
+            pointer-events: none;
+            transform: translate(var(--jx), var(--jy));
+        }
         /* On touch screens the game view shrinks to leave room for the pad. */
         body.touch {
             align-items: flex-start;
@@ -183,20 +264,35 @@
             min-height: 100dvh;
             justify-content: flex-start;
             margin: 0 auto;
+            /* Squeeze every pixel into the game screen on phones. */
+            padding: 6px;
+            padding-bottom: max(6px, env(safe-area-inset-bottom));
+            gap: 6px;
         }
         body.embedded.touch #screen-bezel { flex: none; }
-        body.embedded.touch #pad { margin-top: auto; margin-bottom: 4px; flex: none; width: 100%; }
-        /* Narrow embedded frames: keep START/RST fully legible (no "RS"
-           clipping) by tightening the middle column instead of squeezing it. */
+        body.embedded #screen-bezel { padding: 2px; }
+        body.embedded.touch #pad { margin-top: auto; margin-bottom: 110px; flex: none; width: 100%; min-height: 0; }
+        /* Narrow embedded frames: keep the system keys fully legible by
+           tightening the middle column instead of squeezing it. */
         body.embedded .pad-mid { min-width: 0; }
         body.embedded .pad-sysrow { gap: 6px; }
-        body.embedded .pill {
+        body.embedded button.key {
             padding: 6px 8px;
             min-width: 0;
             font-size: 9px;
-            letter-spacing: 0.5px;
             white-space: nowrap;
             flex: none;
+        }
+        body.embedded button.key-textbox {
+            padding: 4px 8px;
+            min-height: 28px;
+            font-size: 9px;
+            flex: 1 1 auto;
+        }
+        /* Phones: drop the decorative brand + caption from the pad —
+           only the controls stay. */
+        @media (max-width: 600px) {
+            .pad-brand, .sys-label { display: none; }
         }
         /* Narrow Android phones (~360px): the pad's d-pad + A/B row
            overflows without smaller cells, tighter gaps and padding. */
@@ -214,24 +310,23 @@
                 grid-template-rows: repeat(3, 38px);
             }
             .dpad button { font-size: 14px; }
-            .abtns { gap: 8px; }
-            .abtns button {
-                width: 56px;
-                height: 56px;
-                font-size: 18px;
-                border-width: 2px;
-            }
+            #fire-ring { width: 136px; height: 136px; --tick-r: -54px; }
+            #fire-ring .tick { font-size: 12px; }
+            #fire-ring .joy-stick { width: 52px; height: 52px; margin: -26px 0 0 -26px; }
             .pad-mid { gap: 8px; }
             .pad-brand { font-size: 10px; letter-spacing: 1px; }
             .pad-sysrow { gap: 6px; }
-            .pill { padding: 6px 10px; min-width: 40px; min-height: 40px; }
+            button.key { padding: 6px 8px; min-width: 36px; min-height: 36px; }
+            button.key-textbox { padding: 4px 8px; min-width: 0; min-height: 28px; font-size: 9px; }
         }
         @media (max-width: 340px) {
             .dpad {
                 grid-template-columns: repeat(3, 34px);
                 grid-template-rows: repeat(3, 34px);
             }
-            .abtns button { width: 52px; height: 52px; font-size: 16px; }
+            #fire-ring { width: 124px; height: 124px; --tick-r: -48px; }
+            #fire-ring .tick { font-size: 11px; }
+            #fire-ring .joy-stick { width: 48px; height: 48px; margin: -24px 0 0 -24px; }
             #pad { padding: 8px 10px; }
             .pad-brand { display: none; }
         }
@@ -246,7 +341,7 @@
             }
         }
     </style>
-  <script type="module" crossorigin src="/assets/index-DZf9KD4K.js"></script>
+  <script type="module" crossorigin src="/assets/index-Ban3R5dD.js"></script>
 </head>
 <body>
     <div id="cabinet">
@@ -261,14 +356,18 @@
             </div>
             <div class="pad-mid">
                 <div class="pad-brand">SPACE&nbsp;SHOOTER</div>
-                <div class="pad-sysrow">
-                    <button type="button" class="pill" data-keys="enter" aria-label="Start">START</button>
-                    <button type="button" class="pill" data-keys="r" aria-label="Restart">RST</button>
+                <div class="sys-label">SYSTEM</div>
+                <div class="syskeys">
+                    <button type="button" class="key key-textbox" data-keys="enter" aria-label="Start (Enter key)"><span>Enter ⏎</span></button>
                 </div>
             </div>
-            <div class="abtns">
-                <button type="button" id="btn-b" data-keys="z+c" aria-label="Wing guns">B</button>
-                <button type="button" id="btn-a" data-keys="x" aria-label="Main cannon">A</button>
+            <div id="fire-ring" role="button" tabindex="0" aria-label="Fire joystick — drag toward a direction to fire that way, release to stop">
+                <span class="tick" style="--a:-90deg">▲</span>
+                <span class="tick" style="--a:0deg">▶</span>
+                <span class="tick" style="--a:90deg">▼</span>
+                <span class="tick" style="--a:180deg">◀</span>
+                <span class="joy-stem" aria-hidden="true"></span>
+                <span class="joy-stick" aria-hidden="true"></span>
             </div>
         </div>
     </div>

@@ -14,9 +14,13 @@ export class Spawner {
     private timer = 0;
     private ramp = 0;
     private interval: number;
+    // Taller arenas take longer to cross, so pace spawns by height —
+    // otherwise a tall screen would pile up ~1.7x concurrent enemies.
+    private readonly arenaScale: number;
 
-    constructor(public width: number, private gameDifficulty: Difficulty = "normal") {
-        this.interval = TUNING[this.gameDifficulty].spawnInterval;
+    constructor(public width: number, private gameDifficulty: Difficulty = "normal", height = 600) {
+        this.arenaScale = height / 600;
+        this.interval = Math.round(TUNING[this.gameDifficulty].spawnInterval * this.arenaScale);
     }
 
     setDifficulty(d: Difficulty): void {
@@ -27,15 +31,16 @@ export class Spawner {
     reset(): void {
         this.timer = 0;
         this.ramp = 0;
-        this.interval = TUNING[this.gameDifficulty].spawnInterval;
+        this.interval = Math.round(TUNING[this.gameDifficulty].spawnInterval * this.arenaScale);
     }
 
     update(enemies: Enemy[]): void {
         const tuning = TUNING[this.gameDifficulty];
+        const minInterval = tuning.minInterval * this.arenaScale;
         this.ramp++;
-        if (this.ramp > 600 && this.interval > tuning.minInterval) {
+        if (this.ramp > 600 && this.interval > minInterval) {
             this.ramp = 0;
-            this.interval = Math.max(tuning.minInterval, this.interval - tuning.spawnStep);
+            this.interval = Math.max(minInterval, this.interval - tuning.spawnStep);
         }
 
         this.timer++;

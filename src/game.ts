@@ -52,7 +52,7 @@ export class Game {
     this.ctx = ctx;
     this.difficulty = readDifficultyFromUrl();
     this.stars = new StarField(CONFIG.width, CONFIG.height);
-    this.spawner = new Spawner(CONFIG.width, this.difficulty);
+    this.spawner = new Spawner(CONFIG.width, this.difficulty, CONFIG.height);
     this.reset();
   }
 
@@ -112,7 +112,8 @@ export class Game {
       return;
     }
     if (this.gameOver) {
-      if (wasPressed("r")) this.reset();
+      // Enter doubles as restart (the touch pad only carries Enter now).
+      if (wasPressed("r") || wasPressed("enter")) this.reset();
       return;
     }
 
@@ -247,7 +248,7 @@ export class Game {
     ctx.fillStyle = "#fff";
     ctx.font = "18px monospace";
     ctx.fillText(
-      isTouchDevice() ? "Tap the screen or START to launch" : "Click or press ENTER to launch",
+      isTouchDevice() ? "Tap the screen or Enter to launch" : "Click or press ENTER to launch",
       cx,
       cy - 40
     );
@@ -265,8 +266,8 @@ export class Game {
     ctx.font = "14px monospace";
     ctx.fillText("Press 1 / 2 / 3 to pick difficulty", cx, cy + 18);
     if (isTouchDevice()) {
-      ctx.fillText("D-PAD — move · A — fire up · B — wing guns", cx, cy + 42);
-      ctx.fillText("A+B — diagonals · START — launch · RST — restart", cx, cy + 64);
+      ctx.fillText("LEFT PAD — move · FIRE STICK — drag to aim", cx, cy + 42);
+      ctx.fillText("▼ — spread shot · Enter — launch / restart", cx, cy + 64);
     } else {
       ctx.fillText("Arrows / WASD — move · X/Space — fire up · Z/C — fire sides", cx, cy + 42);
       ctx.fillText("Z+X — up-left · X+C — up-right · R — restart · Q — quit", cx, cy + 64);
