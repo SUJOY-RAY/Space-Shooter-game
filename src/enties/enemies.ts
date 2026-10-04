@@ -13,6 +13,7 @@ import {
 } from "../ml/enemyModels";
 import { Bullet } from "./bullet";
 import { Player } from "./player";
+import { sfx } from "../sfx";
 
 export interface EnemyContext {
     player: Player;
@@ -225,6 +226,7 @@ export class Shooter extends Enemy {
             new Bullet(this.x, this.y, (bx * cos - by * sin) * 5, (bx * sin + by * cos) * 5, "#c850ff", 3, true)
           );
         }
+        sfx.zap();
         this.shootCd = cooldown(this.baseFireRate, difficulty);
       } else {
         // Ask the fire model again soon.
@@ -299,6 +301,7 @@ export class Zigzag extends Enemy {
             new Bullet(this.x, this.y, (ax / ad) * 4.6, (ay / ad) * 4.6, "#00ff64", 3, true)
           );
         }
+        sfx.zap();
         this.shootCd = cooldown(95, difficulty);
       } else {
         this.shootCd = 10;

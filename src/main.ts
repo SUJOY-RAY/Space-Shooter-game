@@ -3,9 +3,11 @@ import { initInput, isTouchDevice } from "./input.js";
 import { initTouchControls } from "./touch.js";
 import { CONFIG } from "./types.js";
 import { attachManagerBridge } from "./manager-bridge.js";
+import { initSfx } from "./sfx.js";
 
 initInput();
 initTouchControls();
+initSfx();
 
 // Embedded in the Manager hub iframe: use fill-width canvas sizing instead of
 // the full-viewport 300px pad offset (the iframe viewport is short).

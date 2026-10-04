@@ -1,4 +1,5 @@
 import { CONFIG, dist, type Collidable } from "./types";
+import { sfx } from "./sfx";
 import { DIFFICULTIES, TUNING, difficultyLabel, parseDifficulty, type Difficulty } from "./difficulty";
 import { isTouchDevice, wasPressed } from "./input";
 import { StarField } from "./systems/stars";
@@ -86,6 +87,7 @@ export class Game {
     if (this.started) return;
     this.reset();
     this.started = true;
+    sfx.launch();
   }
 
   /** Quit the current run back to the title screen. */
@@ -171,6 +173,7 @@ export class Game {
             this.enemies.splice(i, 1);
             this.player.score += Math.round(e.score * TUNING[this.difficulty].scoreMult);
             this.boom(e.x, e.y, e.color, 15);
+            sfx.boom();
           }
           break;
         }
@@ -188,7 +191,12 @@ export class Game {
   private hitPlayer(): void {
     if (!this.player.takeHit()) return;
     this.boom(this.player.x, this.player.y, "#ff8c00", 18);
-    if (this.player.dead) this.gameOver = true;
+    if (this.player.dead) {
+      this.gameOver = true;
+      sfx.over();
+    } else {
+      sfx.hit();
+    }
   }
 
   private boom(x: number, y: number, color: string, n: number): void {
@@ -226,6 +234,9 @@ export class Game {
     ctx.fillStyle = "#9a9ac0";
     ctx.font = "14px monospace";
     ctx.fillText(`${difficultyLabel(this.difficulty).toUpperCase()}`, 10, 67);
+    // Sound state (M toggles mute).
+    ctx.textAlign = "right";
+    ctx.fillText(sfx.muted ? "✕♪" : "♪", CONFIG.width - 10, 25);
     ctx.textAlign = "left";
 
     if (!this.started) this.drawTitle();
@@ -270,7 +281,7 @@ export class Game {
       ctx.fillText("▼ — spread shot · Enter — launch / restart", cx, cy + 64);
     } else {
       ctx.fillText("Arrows / WASD — move · X/Space — fire up · Z/C — fire sides", cx, cy + 42);
-      ctx.fillText("Z+X — up-left · X+C — up-right · R — restart · Q — quit", cx, cy + 64);
+      ctx.fillText("Z+X — up-left · X+C — up-right · R — restart · Q — quit · M — mute", cx, cy + 64);
     }
     ctx.textAlign = "left";
   }

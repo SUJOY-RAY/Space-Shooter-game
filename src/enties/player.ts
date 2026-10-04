@@ -1,4 +1,5 @@
 import { isDown } from "../input";
+import { sfx } from "../sfx";
 import { Collidable, Drawable, GameConfig } from "../types";
 import { Bullet } from "./bullet";
 
@@ -67,6 +68,7 @@ export class Player implements Drawable, Collidable {
                 new Bullet(this.x, this.y - this.r, 0, -10, "#ffee00")
             );
             this.cooldown = this.cfg.playerFireRate;
+            sfx.shoot();
         }
 
         // X alone fires straight up (Space always does too).
@@ -78,6 +80,7 @@ export class Player implements Drawable, Collidable {
                 new Bullet(this.x, this.y - this.r, 0, -10, "#ffee00")
             );
             this.cooldown = this.cfg.playerFireRate;
+            sfx.shoot();
         }
 
         // Horizontal + diagonal fire (wing guns): Z left, C right,
@@ -91,28 +94,35 @@ export class Player implements Drawable, Collidable {
                     new Bullet(this.x + this.r, this.y - this.r, dv, -dv, "#ffee00")
                 );
                 this.sideCooldown = this.cfg.playerFireRate;
+                sfx.side();
             } else if (left && upKey) {
                 this.bullets.push(
                     new Bullet(this.x - this.r, this.y - this.r, -dv, -dv, "#ffee00")
                 );
                 this.sideCooldown = this.cfg.playerFireRate;
+                sfx.fireUpLeft();
             } else if (right && upKey) {
                 this.bullets.push(
                     new Bullet(this.x + this.r, this.y - this.r, dv, -dv, "#ffee00")
                 );
                 this.sideCooldown = this.cfg.playerFireRate;
+                sfx.fireUpRight();
             } else {
                 if (left) {
                     this.bullets.push(
                         new Bullet(this.x - this.r, this.y + 2, -10, 0, "#ffee00")
                     );
+                    sfx.fireLeft();
                 }
                 if (right) {
                     this.bullets.push(
                         new Bullet(this.x + this.r, this.y + 2, 10, 0, "#ffee00")
                     );
+                    sfx.fireRight();
                 }
-                if (left || right) this.sideCooldown = this.cfg.playerFireRate;
+                if (left || right) {
+                    this.sideCooldown = this.cfg.playerFireRate;
+                }
             }
         }
     }
