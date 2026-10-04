@@ -1,6 +1,6 @@
 import { CONFIG, dist, type Collidable } from "./types";
 import { DIFFICULTIES, TUNING, difficultyLabel, parseDifficulty, type Difficulty } from "./difficulty";
-import { wasPressed } from "./input";
+import { isTouchDevice, wasPressed } from "./input";
 import { StarField } from "./systems/stars";
 import { Spawner } from "./enties/Spawner";
 import { Player } from "./enties/player";
@@ -246,7 +246,11 @@ export class Game {
 
     ctx.fillStyle = "#fff";
     ctx.font = "18px monospace";
-    ctx.fillText("Click or press ENTER to launch", cx, cy - 40);
+    ctx.fillText(
+      isTouchDevice() ? "Tap the screen or START to launch" : "Click or press ENTER to launch",
+      cx,
+      cy - 40
+    );
 
     // Difficulty select: selected tier is highlighted.
     ctx.font = "16px monospace";
@@ -260,8 +264,13 @@ export class Game {
     ctx.fillStyle = "#9a9ac0";
     ctx.font = "14px monospace";
     ctx.fillText("Press 1 / 2 / 3 to pick difficulty", cx, cy + 18);
-    ctx.fillText("Arrows / WASD — move · X/Space — fire up · Z/C — fire sides", cx, cy + 42);
-    ctx.fillText("Z+X — up-left · X+C — up-right · R — restart · Q — quit", cx, cy + 64);
+    if (isTouchDevice()) {
+      ctx.fillText("D-PAD — move · A — fire up · B — wing guns", cx, cy + 42);
+      ctx.fillText("A+B — diagonals · START — launch · RST — restart", cx, cy + 64);
+    } else {
+      ctx.fillText("Arrows / WASD — move · X/Space — fire up · Z/C — fire sides", cx, cy + 42);
+      ctx.fillText("Z+X — up-left · X+C — up-right · R — restart · Q — quit", cx, cy + 64);
+    }
     ctx.textAlign = "left";
   }
 

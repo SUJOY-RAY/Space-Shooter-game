@@ -2,16 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Space Shooter</title>
     <style>
         html, body {
             margin: 0;
             height: 100%;
-            background: black;
-            display: grid;
-            place-items: center;
-            overflow: hidden;
+            background: #101014;
             overscroll-behavior: none;
             font-family: monospace;
             color: white;
@@ -20,20 +17,359 @@
             position: fixed;
             inset: 0;
             width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Handheld cabinet: screen on top, arcade pad in the space below. */
+        #cabinet {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            max-height: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        #screen-bezel {
+            background: #000;
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 6px;
+            line-height: 0;
         }
         canvas {
             background: #0a0a19;
-            border: 1px solid #333;
             cursor: pointer;
             /* Fixed 800x600 arena, scaled to fill — never crop. */
-            width: min(100%, calc((100vh - 16px) * 4 / 3));
+            width: min(100%, calc((100vh - 16px) * 4 / 3), calc((100dvh - 16px) * 4 / 3));
             height: auto;
+            max-width: 100%;
             display: block;
+            touch-action: none;
+            outline: none;
+        }
+        #screen-bezel {
+            width: 100%;
+            max-width: 560px;
+            box-sizing: border-box;
+        }
+        /* Embedded in the Manager hub iframe: the iframe viewport is short,
+           so never size the canvas from a fixed 300px pad offset — fill the
+           bezel width and let the pad flow below (hub gives a tall frame). */
+        body.embedded #screen-bezel { width: 100%; }
+        body.embedded canvas { width: 100%; }
+        /* Arcade pad: hidden on keyboard devices, shown on touch (see touch.ts). */
+        #pad[hidden] { display: none !important; }
+        #pad {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            width: min(100%, 560px);
+            min-height: 196px;
+            box-sizing: border-box;
+            background: linear-gradient(180deg, #26262e, #17171c);
+            border: 2px solid #333;
+            border-radius: 18px;
+            padding: 14px 18px;
+            touch-action: none;
+        }
+        /* D-pad cross. */
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 44px);
+            grid-template-rows: repeat(3, 44px);
+            gap: 0;
+            flex: none;
+        }
+        .dpad button {
+            background: #3a3a44;
+            border: 1px solid #111;
+            color: #cfcfd6;
+            font-size: 16px;
+            padding: 0;
+            cursor: pointer;
+            touch-action: none;
+        }
+        .dpad button:nth-child(2) { border-radius: 8px 8px 0 0; }
+        .dpad button:nth-child(4) { border-radius: 8px 0 0 8px; }
+        .dpad button:nth-child(6) { border-radius: 0 8px 8px 0; }
+        .dpad button:nth-child(8) { border-radius: 0 0 8px 8px; }
+        .dpad .nub {
+            background: #2b2b33;
+            border: 1px solid #111;
+        }
+        .dpad button.active { background: #00dcff; color: #001318; }
+        /* Middle column: brand + system pills. */
+        .pad-mid {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        .pad-brand {
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: #9a9ac0;
+            text-align: center;
+        }
+        .pad-sysrow { display: flex; gap: 10px; }
+        /* System keyboard: the old START/RST pills live here as real
+           keyboard keys (Enter = start, R = restart). */
+        .sys-label {
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: #6a6a78;
+            text-align: center;
+        }
+        .syskeys { display: flex; gap: 6px; }
+        button.key {
+            border: 1px solid #111;
+            border-bottom-width: 3px;
+            background: linear-gradient(180deg, #4a4a55, #2c2c34);
+            color: #e8e8ee;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            padding: 6px 10px;
+            cursor: pointer;
+            touch-action: none;
+            min-width: 40px;
+            min-height: 36px;
+        }
+        button.key kbd {
+            font-family: inherit;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        button.key.active {
+            background: #9a9ac0; color: #101014;
+            border-bottom-width: 1px;
+            transform: translateY(2px);
+        }
+        /* Enter looks like a small one-line text box (still a button —
+           tap it to start). */
+        button.key-textbox {
+            flex: 1 1 auto;
+            background: rgba(255, 255, 255, 0.92);
+            color: #6d6d70;
+            text-align: left;
+            font-weight: normal;
+            font-size: 9px;
+            padding: 4px 8px;
+            min-width: 0;
+            min-height: 28px;
+            border: 1px solid #111;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+        button.key-textbox.active {
+            background: #ffffff; color: #111111;
+            transform: none;
+            border-bottom-width: 1px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+        }
+        /* Fire joystick: ball-top stick over a dark dished base. Grab it,
+           drag toward a direction to fire that way, release to spring back
+           and stop. Diagonals land properly — the shot follows the stick. */
+        #fire-ring {
+            position: relative;
+            width: 148px; height: 148px;
+            flex: none;
+            border-radius: 50%;
+            border: 2px solid #0c0c0f;
+            box-shadow: 0 4px 0 #000,
+                inset 0 2px 6px rgba(255, 255, 255, 0.08),
+                inset 0 -8px 14px rgba(0, 0, 0, 0.65);
+            background:
+                conic-gradient(from 0deg,
+                    transparent 0deg 44deg, rgba(0, 0, 0, 0.55) 44deg 46deg,
+                    transparent 46deg 134deg, rgba(0, 0, 0, 0.55) 134deg 136deg,
+                    transparent 136deg 224deg, rgba(0, 0, 0, 0.55) 224deg 226deg,
+                    transparent 226deg 314deg, rgba(0, 0, 0, 0.55) 314deg 316deg,
+                    transparent 316deg 360deg),
+                radial-gradient(circle at 50% 42%, #3a3a42 0%, #26262c 55%, #17171b 100%);
+            touch-action: none;
+            cursor: grab;
+            outline: none;
+            --tick-r: -60px;
+            --jx: 0px;
+            --jy: 0px;
+            --aim: 0deg;
+            --mag: 0px;
+        }
+        #fire-ring.active { filter: brightness(1.15); cursor: grabbing; }
+        #fire-ring .tick {
+            position: absolute; left: 50%; top: 50%;
+            width: 18px; height: 18px; margin: -9px 0 0 -9px;
+            display: grid; place-items: center;
+            font-size: 13px; color: #c9c9d2;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+            pointer-events: none;
+            transform: rotate(var(--a)) translateY(var(--tick-r)) rotate(calc(-1 * var(--a)));
+        }
+        /* Stick stem: stretches from the dish center toward the ball. */
+        #fire-ring .joy-stem {
+            position: absolute; left: 50%; top: 50%;
+            width: var(--mag); height: 16px; margin-top: -8px;
+            transform-origin: left center;
+            transform: rotate(var(--aim));
+            background: linear-gradient(180deg, #3c3c44, #141418);
+            border-radius: 8px;
+            pointer-events: none;
+        }
+        /* Ball top: light gray sphere, shadow falls opposite the drag. */
+        #fire-ring .joy-stick {
+            position: absolute; left: 50%; top: 50%;
+            width: 56px; height: 56px; margin: -28px 0 0 -28px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 34% 28%,
+                #fafafc 0%, #d9d9e0 30%, #a9a9b4 62%, #6e6e78 100%);
+            border: 2px solid #0c0c0f;
+            box-shadow: calc(var(--jx) * -0.25) calc(var(--jy) * -0.25 + 5px) 12px rgba(0, 0, 0, 0.55),
+                inset -3px -5px 8px rgba(0, 0, 0, 0.25);
+            pointer-events: none;
+            transform: translate(var(--jx), var(--jy));
+        }
+        /* On touch screens the game view shrinks to leave room for the pad. */
+        body.touch {
+            align-items: flex-start;
+            overflow-y: auto;
+        }
+        body.touch #cabinet { width: min(100%, 560px); }
+        body.touch canvas {
+            /* Clamped: in short viewports (e.g. hub iframe) the 300px pad
+               offset goes negative — never collapse below a playable size. */
+            width: min(100%, max(160px, calc((100vh - 300px) * 4 / 3)), max(160px, calc((100dvh - 300px) * 4 / 3)));
+        }
+        body.embedded.touch canvas { width: 100%; }
+        /* Embedded in the hub: fill the frame height, canvas on top and the
+           pad pinned to the bottom so no dead space sits under the controls. */
+        body.embedded.touch { align-items: stretch; }
+        body.embedded.touch #cabinet {
+            width: min(100%, 560px);
+            min-height: 100vh;
+            min-height: 100dvh;
+            justify-content: flex-start;
+            margin: 0 auto;
+            /* Squeeze every pixel into the game screen on phones. */
+            padding: 6px;
+            padding-bottom: max(6px, env(safe-area-inset-bottom));
+            gap: 6px;
+        }
+        body.embedded.touch #screen-bezel { flex: none; }
+        body.embedded #screen-bezel { padding: 2px; }
+        body.embedded.touch #pad { margin-top: auto; margin-bottom: 110px; flex: none; width: 100%; min-height: 0; }
+        /* Narrow embedded frames: keep the system keys fully legible by
+           tightening the middle column instead of squeezing it. */
+        body.embedded .pad-mid { min-width: 0; }
+        body.embedded .pad-sysrow { gap: 6px; }
+        body.embedded button.key {
+            padding: 6px 8px;
+            min-width: 0;
+            font-size: 9px;
+            white-space: nowrap;
+            flex: none;
+        }
+        body.embedded button.key-textbox {
+            padding: 4px 8px;
+            min-height: 28px;
+            font-size: 9px;
+            flex: 1 1 auto;
+        }
+        /* Phones: drop the decorative brand + caption from the pad —
+           only the controls stay. */
+        @media (max-width: 600px) {
+            .pad-brand, .sys-label { display: none; }
+        }
+        /* Narrow Android phones (~360px): the pad's d-pad + A/B row
+           overflows without smaller cells, tighter gaps and padding. */
+        @media (max-width: 420px) {
+            #cabinet { gap: 8px; padding: 8px; width: 100%; }
+            #screen-bezel { padding: 4px; border-radius: 8px; }
+            #pad {
+                gap: 6px;
+                padding: 10px 12px;
+                border-radius: 14px;
+                min-height: 0;
+            }
+            .dpad {
+                grid-template-columns: repeat(3, 38px);
+                grid-template-rows: repeat(3, 38px);
+            }
+            .dpad button { font-size: 14px; }
+            #fire-ring { width: 136px; height: 136px; --tick-r: -54px; }
+            #fire-ring .tick { font-size: 12px; }
+            #fire-ring .joy-stick { width: 52px; height: 52px; margin: -26px 0 0 -26px; }
+            .pad-mid { gap: 8px; }
+            .pad-brand { font-size: 10px; letter-spacing: 1px; }
+            .pad-sysrow { gap: 6px; }
+            button.key { padding: 6px 8px; min-width: 36px; min-height: 36px; }
+            button.key-textbox { padding: 4px 8px; min-width: 0; min-height: 28px; font-size: 9px; }
+        }
+        @media (max-width: 340px) {
+            .dpad {
+                grid-template-columns: repeat(3, 34px);
+                grid-template-rows: repeat(3, 34px);
+            }
+            #fire-ring { width: 124px; height: 124px; --tick-r: -48px; }
+            #fire-ring .tick { font-size: 11px; }
+            #fire-ring .joy-stick { width: 48px; height: 48px; margin: -24px 0 0 -24px; }
+            #pad { padding: 8px 10px; }
+            .pad-brand { display: none; }
+        }
+        /* Short landscape phones: keep the whole cabinet scrollable and
+           compact so canvas + pad never clip. */
+        @media (max-height: 500px) {
+            body.touch { align-items: flex-start; }
+            #cabinet { gap: 6px; padding: 6px; }
+            #pad { min-height: 0; padding: 8px 12px; }
+            body.touch canvas {
+                width: min(100%, calc((100vh - 220px) * 4 / 3), calc((100dvh - 220px) * 4 / 3));
+            }
         }
     </style>
 </head>
 <body>
-    <canvas id="game" width="800" height="600" title="Click to launch"></canvas>
+    <div id="cabinet">
+        <div id="screen-bezel">
+            <canvas id="game" width="800" height="600" title="Tap to launch"></canvas>
+        </div>
+        <div id="pad" hidden>
+            <div class="dpad" role="group" aria-label="Move">
+                <span></span><button type="button" data-keys="arrowup" aria-label="Move up">▲</button><span></span>
+                <button type="button" data-keys="arrowleft" aria-label="Move left">◀</button><span class="nub"></span><button type="button" data-keys="arrowright" aria-label="Move right">▶</button>
+                <span></span><button type="button" data-keys="arrowdown" aria-label="Move down">▼</button><span></span>
+            </div>
+            <div class="pad-mid">
+                <div class="pad-brand">SPACE&nbsp;SHOOTER</div>
+                <div class="sys-label">SYSTEM</div>
+                <div class="syskeys">
+                    <button type="button" class="key key-textbox" data-keys="enter" aria-label="Start (Enter key)"><span>Enter ⏎</span></button>
+                </div>
+            </div>
+            <div id="fire-ring" role="button" tabindex="0" aria-label="Fire joystick — drag toward a direction to fire that way, release to stop">
+                <span class="tick" style="--a:-90deg">▲</span>
+                <span class="tick" style="--a:0deg">▶</span>
+                <span class="tick" style="--a:90deg">▼</span>
+                <span class="tick" style="--a:180deg">◀</span>
+                <span class="joy-stem" aria-hidden="true"></span>
+                <span class="joy-stick" aria-hidden="true"></span>
+            </div>
+        </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
