@@ -277,7 +277,7 @@ export class Game {
     ctx.font = "14px monospace";
     ctx.fillText("Press 1 / 2 / 3 to pick difficulty", cx, cy + 18);
     if (isTouchDevice()) {
-      ctx.fillText("LEFT PAD — move · FIRE STICK — drag to aim", cx, cy + 42);
+      ctx.fillText("MOVE STICK — drag to move · FIRE STICK — drag to aim", cx, cy + 42);
       ctx.fillText("▼ — spread shot · Enter — launch / restart", cx, cy + 64);
     } else {
       ctx.fillText("Arrows / WASD — move · X/Space — fire up · Z/C — fire sides", cx, cy + 42);

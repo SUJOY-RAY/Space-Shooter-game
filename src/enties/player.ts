@@ -50,10 +50,20 @@ export class Player implements Drawable, Collidable {
     update(): void {
         const px = this.x;
         const py = this.y;
-        if(isDown("arrowleft", "a")) this.x -= this.cfg.playerSpeed;
-        if(isDown("arrowright", "d")) this.x += this.cfg.playerSpeed;
-        if(isDown("arrowup", "w")) this.y -= this.cfg.playerSpeed;
-        if(isDown("arrowdown", "s")) this.y += this.cfg.playerSpeed;
+        // Combined axis input so diagonals (e.g. up+left from the move stick
+        // or two arrows/WASD) travel at the same speed as straight lines.
+        let mx = 0;
+        let my = 0;
+        if (isDown("arrowleft", "a")) mx -= 1;
+        if (isDown("arrowright", "d")) mx += 1;
+        if (isDown("arrowup", "w")) my -= 1;
+        if (isDown("arrowdown", "s")) my += 1;
+        if (mx !== 0 || my !== 0) {
+            const len = Math.hypot(mx, my);
+            const s = this.cfg.playerSpeed / len;
+            this.x += mx * s;
+            this.y += my * s;
+        }
 
         this.clampToBounds();
         this.vx = this.x - px;

@@ -81,32 +81,7 @@
             padding: 14px 18px;
             touch-action: none;
         }
-        /* D-pad cross. */
-        .dpad {
-            display: grid;
-            grid-template-columns: repeat(3, 44px);
-            grid-template-rows: repeat(3, 44px);
-            gap: 0;
-            flex: none;
-        }
-        .dpad button {
-            background: #3a3a44;
-            border: 1px solid #111;
-            color: #cfcfd6;
-            font-size: 16px;
-            padding: 0;
-            cursor: pointer;
-            touch-action: none;
-        }
-        .dpad button:nth-child(2) { border-radius: 8px 8px 0 0; }
-        .dpad button:nth-child(4) { border-radius: 8px 0 0 8px; }
-        .dpad button:nth-child(6) { border-radius: 0 8px 8px 0; }
-        .dpad button:nth-child(8) { border-radius: 0 0 8px 8px; }
-        .dpad .nub {
-            background: #2b2b33;
-            border: 1px solid #111;
-        }
-        .dpad button.active { background: #00dcff; color: #001318; }
+        /* (Retired D-pad styles removed — left side is now #move-ring.) */
         /* Middle column: brand + system pills. */
         .pad-mid {
             display: flex;
@@ -181,10 +156,11 @@
             border-bottom-width: 1px;
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
         }
-        /* Fire joystick: ball-top stick over a dark dished base. Grab it,
-           drag toward a direction to fire that way, release to spring back
-           and stop. Diagonals land properly — the shot follows the stick. */
-        #fire-ring {
+        /* Move joystick: same ball-top stick as the fire stick, but on the
+           left. Drag in any direction (including diagonals) to move that
+           way, release to spring back and stop. */
+        #fire-ring,
+        #move-ring {
             position: relative;
             width: 148px; height: 148px;
             flex: none;
@@ -210,8 +186,10 @@
             --aim: 0deg;
             --mag: 0px;
         }
-        #fire-ring.active { filter: brightness(1.15); cursor: grabbing; }
-        #fire-ring .tick {
+        #fire-ring.active,
+        #move-ring.active { filter: brightness(1.15); cursor: grabbing; }
+        #fire-ring .tick,
+        #move-ring .tick {
             position: absolute; left: 50%; top: 50%;
             width: 18px; height: 18px; margin: -9px 0 0 -9px;
             display: grid; place-items: center;
@@ -221,7 +199,8 @@
             transform: rotate(var(--a)) translateY(var(--tick-r)) rotate(calc(-1 * var(--a)));
         }
         /* Stick stem: stretches from the dish center toward the ball. */
-        #fire-ring .joy-stem {
+        #fire-ring .joy-stem,
+        #move-ring .joy-stem {
             position: absolute; left: 50%; top: 50%;
             width: var(--mag); height: 16px; margin-top: -8px;
             transform-origin: left center;
@@ -231,7 +210,8 @@
             pointer-events: none;
         }
         /* Ball top: light gray sphere, shadow falls opposite the drag. */
-        #fire-ring .joy-stick {
+        #fire-ring .joy-stick,
+        #move-ring .joy-stick {
             position: absolute; left: 50%; top: 50%;
             width: 56px; height: 56px; margin: -28px 0 0 -28px;
             border-radius: 50%;
@@ -294,8 +274,8 @@
         @media (max-width: 600px) {
             .pad-brand, .sys-label { display: none; }
         }
-        /* Narrow Android phones (~360px): the pad's d-pad + A/B row
-           overflows without smaller cells, tighter gaps and padding. */
+        /* Narrow Android phones (~360px): the pad's sticks + syskeys row
+           overflows without tighter gaps and padding. */
         @media (max-width: 420px) {
             #cabinet { gap: 8px; padding: 8px; width: 100%; }
             #screen-bezel { padding: 4px; border-radius: 8px; }
@@ -305,14 +285,9 @@
                 border-radius: 14px;
                 min-height: 0;
             }
-            .dpad {
-                grid-template-columns: repeat(3, 38px);
-                grid-template-rows: repeat(3, 38px);
-            }
-            .dpad button { font-size: 14px; }
-            #fire-ring { width: 136px; height: 136px; --tick-r: -54px; }
-            #fire-ring .tick { font-size: 12px; }
-            #fire-ring .joy-stick { width: 52px; height: 52px; margin: -26px 0 0 -26px; }
+            #fire-ring, #move-ring { width: 136px; height: 136px; --tick-r: -54px; }
+            #fire-ring .tick, #move-ring .tick { font-size: 12px; }
+            #fire-ring .joy-stick, #move-ring .joy-stick { width: 52px; height: 52px; margin: -26px 0 0 -26px; }
             .pad-mid { gap: 8px; }
             .pad-brand { font-size: 10px; letter-spacing: 1px; }
             .pad-sysrow { gap: 6px; }
@@ -320,13 +295,9 @@
             button.key-textbox { padding: 4px 8px; min-width: 0; min-height: 28px; font-size: 9px; }
         }
         @media (max-width: 340px) {
-            .dpad {
-                grid-template-columns: repeat(3, 34px);
-                grid-template-rows: repeat(3, 34px);
-            }
-            #fire-ring { width: 124px; height: 124px; --tick-r: -48px; }
-            #fire-ring .tick { font-size: 11px; }
-            #fire-ring .joy-stick { width: 48px; height: 48px; margin: -24px 0 0 -24px; }
+            #fire-ring, #move-ring { width: 124px; height: 124px; --tick-r: -48px; }
+            #fire-ring .tick, #move-ring .tick { font-size: 11px; }
+            #fire-ring .joy-stick, #move-ring .joy-stick { width: 48px; height: 48px; margin: -24px 0 0 -24px; }
             #pad { padding: 8px 10px; }
             .pad-brand { display: none; }
         }
@@ -348,10 +319,17 @@
             <canvas id="game" width="800" height="600" title="Tap to launch"></canvas>
         </div>
         <div id="pad" hidden>
-            <div class="dpad" role="group" aria-label="Move">
-                <span></span><button type="button" data-keys="arrowup" aria-label="Move up">▲</button><span></span>
-                <button type="button" data-keys="arrowleft" aria-label="Move left">◀</button><span class="nub"></span><button type="button" data-keys="arrowright" aria-label="Move right">▶</button>
-                <span></span><button type="button" data-keys="arrowdown" aria-label="Move down">▼</button><span></span>
+            <div id="move-ring" role="button" tabindex="0" aria-label="Move joystick — drag in any direction to move, including diagonals, release to stop">
+                <span class="tick" style="--a:-90deg">▲</span>
+                <span class="tick" style="--a:-45deg">↗</span>
+                <span class="tick" style="--a:0deg">▶</span>
+                <span class="tick" style="--a:45deg">↘</span>
+                <span class="tick" style="--a:90deg">▼</span>
+                <span class="tick" style="--a:135deg">↙</span>
+                <span class="tick" style="--a:180deg">◀</span>
+                <span class="tick" style="--a:-135deg">↖</span>
+                <span class="joy-stem" aria-hidden="true"></span>
+                <span class="joy-stick" aria-hidden="true"></span>
             </div>
             <div class="pad-mid">
                 <div class="pad-brand">SPACE&nbsp;SHOOTER</div>
